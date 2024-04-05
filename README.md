@@ -1,2 +1,3 @@
 # frontend
-develope android app
+Android app development using jetpack compose
+developer : jaemin
