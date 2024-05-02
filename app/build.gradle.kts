@@ -51,7 +51,8 @@ android {
 }
 
 dependencies {
-
+    implementation(libs.pose.detection.common)
+    val lifecycle_version = "2.7.0"
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -61,6 +62,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.retrofit)   // http 통신 라이브러리
+    implementation(libs.converter.scalars)
+
     implementation(libs.converter.gson)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
@@ -72,6 +75,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    // Lifecycle utilities for Compose
     // CameraX core library using the camera2 implementation
     // The following line is optional, as the core library is included indirectly by camera-camera2
     implementation(libs.androidx.camera.core)

@@ -19,18 +19,21 @@ composeBom = "2023.08.00"
 retrofit = "2.11.0"
 navigationRuntimeKtx = "2.7.7"
 navigationCompose = "2.7.7"
+poseDetectionCommon = "17.0.0"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraCore" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
 camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCamera2" }
 camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "cameraExtensions" }
 camera-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision", version.ref = "cameraMlkitVision" }
 camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraView" }
 camera-video = { module = "androidx.camera:camera-video", version.ref = "cameraVideo" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+converter-scalars = { module = "com.squareup.retrofit2:converter-scalars", version.ref = "converterGson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -47,6 +50,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+pose-detection-common = { group = "com.google.mlkit", name = "pose-detection-common", version.ref = "poseDetectionCommon" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
