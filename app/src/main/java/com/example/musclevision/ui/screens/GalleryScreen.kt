@@ -94,7 +94,7 @@ fun GalleryScreen(onSelectButtonClicked: () -> Unit, modifier: Modifier = Modifi
                 modifier = Modifier
                     .padding(vertical = 8.dp)
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .height(400.dp)
             ) {
                 Image(
                     painter = painter,

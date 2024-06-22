@@ -1,6 +1,7 @@
 package com.example.musclevision
 
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
@@ -25,11 +26,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.musclevision.ui.screens.CameraScreen
+import com.example.musclevision.ui.screens.CapturedImageScreen
 import com.example.musclevision.ui.screens.EnrollScreen
 import com.example.musclevision.ui.screens.GalleryScreen
 import com.example.musclevision.ui.screens.GreetingScreen
@@ -45,6 +49,7 @@ enum class MuscleVisionScreen(@StringRes val title: Int) {
     Main(title = R.string.main),
     Camera(title = R.string.camera),
     Gallery(title = R.string.gallery),
+    CapturedImage(title = R.string.captured_image),
     Report(title = R.string.analyze)
 }
 
@@ -87,7 +92,7 @@ fun MuscleVisionApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     // Get the name of the current screen
     val currentScreen = MuscleVisionScreen.valueOf(
-        backStackEntry?.destination?.route ?: MuscleVisionScreen.Login.name
+        backStackEntry?.destination?.route?.substringBefore("?") ?: MuscleVisionScreen.Login.name
     )
 
     Scaffold(
@@ -98,8 +103,7 @@ fun MuscleVisionApp(
                 navigateUp = { navController.navigateUp() }
             )
         }
-    ){
-            innerPadding ->
+    ){  innerPadding ->
         NavHost(
             navController = navController,
             startDestination = MuscleVisionScreen.Login.name,
@@ -161,15 +165,50 @@ fun MuscleVisionApp(
             }
             composable(route = MuscleVisionScreen.Camera.name) {
                     CameraScreen(
-                        onNextButtonClicked = {
-                            navController.navigate(MuscleVisionScreen.Report.name)
-                            Log.d("ClickButton", "success")
+                        onImageCaptured = { uri ->
+                            navController.navigate("${MuscleVisionScreen.CapturedImage.name}?uri=${Uri.encode(uri.toString())}")
                         },
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp)
                     )
             }
+//            composable(route = MuscleVisionScreen.CapturedImage.name) {
+//                CapturedImageScreen(
+//                    onAnalyzeButtonClicked = {
+//                        navController.navigate(MuscleVisionScreen.Report.name)
+//                        Log.d("ClickButton", "success")
+//                    },
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .padding(16.dp)
+//                )
+//            }
+            composable(
+                route = "${MuscleVisionScreen.CapturedImage.name}?uri={uri}",
+                arguments = listOf(navArgument("uri") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val uriString = backStackEntry.arguments?.getString("uri")
+                uriString?.let { uri ->
+                    CapturedImageScreen(
+                        onAnalyzeButtonClicked = {
+                            navController.navigate(MuscleVisionScreen.Report.name)
+                        },
+                        onRetakeButtonClicked = {
+                            navController.navigate(MuscleVisionScreen.Camera.name)
+                        },
+                        imageUri = Uri.parse(uri)
+                    )
+                }
+            }
+//            composable(route = MuscleVisionScreen.CapturedImage.name) {
+//                CapturedImageScreen(
+//                    onAnalyzeButtonClicked = {
+//                        navController.navigate(MuscleVisionScreen.Report.name)
+//                    },
+//                    imageUri = Uri.EMPTY
+//                )
+//            }
             composable(route = MuscleVisionScreen.Report.name) {
                 ReportScreen(
                     onNextButtonClicked = {

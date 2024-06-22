@@ -3,6 +3,7 @@
 package com.example.musclevision.ui.screens
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.camera.core.Camera
@@ -20,6 +21,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +43,10 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.gson.GsonBuilder
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.pose.PoseDetection
+import com.google.mlkit.vision.pose.PoseLandmark
+import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions
 import kotlinx.coroutines.launch
 import okhttp3.MediaType
 import okhttp3.MultipartBody
@@ -60,7 +66,7 @@ import kotlin.reflect.typeOf
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(
-    onNextButtonClicked: () -> Unit,
+    onImageCaptured: (Uri) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -92,6 +98,13 @@ fun CameraScreen(
             )
         }
     }
+    // Composable이 폐기될 때 카메라 리소스 해제
+    DisposableEffect(Unit) {
+        onDispose {
+            camera.value?.cameraControl?.cancelFocusAndMetering()
+            cameraProvider.get().unbindAll()
+        }
+    }
     // 권한이 승인되지 않은 경우 다이얼로그 표시
     if (!permissionState.status.isGranted) {
         AlertDialog(
@@ -120,43 +133,60 @@ fun CameraScreen(
 
         // Capture Button
         Button(
-//            onClick = onNextButtonClicked,
             onClick = {
                 captureImage(
                     imageCapture = imageCapture,
                     outputDirectory = outputDirectory,
-                    onSuccess = { file ->
-                        lifecycleOwner.lifecycleScope.launch {
-                            try {
-                                val response = uploadImage(file)
-                                Log.d("CameraScreen","응답으로 받은것: $response , $file")
-                                if (response.isSuccessful) {
-                                    // 업로드 성공
-                                    val responseBody = response.body()
-                                    // 서버 응답에 따라 적절한 처리를 수행합니다.
-                                    Log.d("CameraScreen","성공 : $responseBody")
-                                } else {
-                                    // 업로드 실패
-                                    val errorMessage = response.message()
-
-                                    // 오류 처리
-                                    Log.d("CameraScreen","에러로 받은것: $errorMessage")
-                                }
-                            } catch (e: Exception) {
-                                // 예외 처리
-                                Log.e("CameraScreen", "Error uploading image: ${e.message}")
-                            }
-                        }
-                        // 이미지 캡처 성공 시 여기에 원하는 작업을 추가하세요.
+                    onSuccess = { file, poseLandmarks ->
+                        val uri = Uri.fromFile(file)
+                        onImageCaptured(uri)
                         Log.d("CameraScreen", "Image captured and saved: ${file.absolutePath}")
+                        Log.d("CameraScreen", "Detected pose landmarks: $poseLandmarks")
                     },
                     onError = { errorMessage ->
-                        // 이미지 캡처 실패 시 여기에 오류 처리를 추가하세요.
                         Log.e("CameraScreen", "Error capturing image: $errorMessage")
                     },
                     context
                 )
             },
+//            onClick = {
+//                captureImage(
+//                    imageCapture = imageCapture,
+//                    outputDirectory = outputDirectory,
+//                    onSuccess = { file, poseLandmarks  ->
+//                        lifecycleOwner.lifecycleScope.launch {
+//                            try {
+//                                val response = uploadImage(file)
+//                                Log.d("CameraScreen","응답으로 받은것: $response , $file")
+//                                if (response.isSuccessful) {
+//                                    // 업로드 성공
+//                                    val responseBody = response.body()
+//                                    // 서버 응답에 따라 적절한 처리를 수행합니다.
+//                                    Log.d("CameraScreen","성공 : $responseBody")
+//                                } else {
+//                                    // 업로드 실패
+//                                    val errorMessage = response.message()
+//
+//                                    // 오류 처리
+//                                    Log.d("CameraScreen","에러로 받은것: $errorMessage")
+//                                }
+//                            } catch (e: Exception) {
+//                                // 예외 처리
+//                                Log.e("CameraScreen", "Error uploading image: ${e.message}")
+//                            }
+//                        }
+//                        // 이미지 캡처 성공 시 여기에 원하는 작업을 추가하세요.
+//                        Log.d("CameraScreen", "Image captured and saved: ${file.absolutePath}")
+//                        Log.d("CameraScreen", "Detected pose landmarks: $poseLandmarks")
+//                    },
+//                    onError = { errorMessage ->
+//                        // 이미지 캡처 실패 시 여기에 오류 처리를 추가하세요.
+//                        Log.e("CameraScreen", "Error capturing image: $errorMessage")
+//                    },
+//                    context
+//                )
+//
+//            },
             modifier = Modifier
                 .size(100.dp)
                 .align(Alignment.CenterHorizontally) // Center horizontally
@@ -169,7 +199,7 @@ fun CameraScreen(
 fun captureImage(
     imageCapture: ImageCapture,
     outputDirectory: File,
-    onSuccess: (File) -> Unit,
+    onSuccess: (File, List<PoseLandmark>) -> Unit,
     onError: (String) -> Unit,
     context: Context
 ) {
@@ -183,7 +213,10 @@ fun captureImage(
     imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(context),
         object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                onSuccess(outputFile)
+                detectPose(outputFile, context) { poseLandmarks ->
+                    onSuccess(outputFile, poseLandmarks)
+                }
+//                onSuccess(outputFile)
                 // 이미지 캡처 및 저장 후에 이미지를 서버로 업로드
             }
             override fun onError(exception: ImageCaptureException) {
@@ -191,6 +224,24 @@ fun captureImage(
             }
         }
     )
+}
+fun detectPose(imageFile: File, context: Context, onPoseDetected: (List<PoseLandmark>) -> Unit) {
+    val poseDetectorOptions = AccuratePoseDetectorOptions.Builder()
+        .setDetectorMode(AccuratePoseDetectorOptions.SINGLE_IMAGE_MODE)
+        .build()
+
+    val poseDetector = PoseDetection.getClient(poseDetectorOptions)
+
+    val image = InputImage.fromFilePath(context, Uri.fromFile(imageFile))
+    poseDetector.process(image)
+        .addOnSuccessListener { pose ->
+            val poseLandmarks = pose.allPoseLandmarks
+            onPoseDetected(poseLandmarks)
+        }
+        .addOnFailureListener { e ->
+            Log.e("PoseDetection", "Pose detection failed: ${e.message}")
+            onPoseDetected(emptyList())
+        }
 }
 
 suspend fun uploadImage(imageFile: File): Response<UploadImageResponse> {

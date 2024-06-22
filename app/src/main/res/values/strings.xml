@@ -6,6 +6,7 @@
     <string name="main">Main</string>
     <string name="gallery">Gallery</string>
     <string name="camera">Take Picture</string>
+    <string name="captured_image">Captured Image</string>
     <string name="analyze">Analysis Report</string>
     <string name="next">Next</string>
 </resources>
