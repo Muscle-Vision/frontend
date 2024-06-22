@@ -54,7 +54,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executor
-
+import kotlin.reflect.typeOf
 
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -205,9 +205,9 @@ suspend fun uploadImage(imageFile: File): Response<UploadImageResponse> {
     val service = retrofit.create(ApiService::class.java)
 
     // 이미지 파일을 RequestBody로 변환
-    val requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile)
-    val body = MultipartBody.Part.createFormData("file", imageFile.name, requestFile)
-    Log.d("CameraScreen","$requestFile, $body")
+    val requestFile = RequestBody.create(MediaType.parse("image/jpeg"), imageFile)
+    val body = MultipartBody.Part.createFormData("image", imageFile.name, requestFile)
+    Log.d("CameraScreen","$requestFile, ${body.javaClass}")
     // 서버로 업로드 요청
     return service.uploadImage(body)
 }

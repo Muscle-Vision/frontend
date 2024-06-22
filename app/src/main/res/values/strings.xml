@@ -3,6 +3,8 @@
     <string name="greeting">Greeting</string>
     <string name="login">Login</string>
     <string name="enroll">Enroll</string>
+    <string name="main">Main</string>
+    <string name="gallery">Gallery</string>
     <string name="camera">Take Picture</string>
     <string name="analyze">Analysis Report</string>
     <string name="next">Next</string>

@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.musclevision"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -52,6 +52,7 @@ android {
 
 dependencies {
     implementation(libs.pose.detection.common)
+    implementation(libs.androidx.constraintlayout.compose)
     val lifecycle_version = "2.7.0"
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -93,6 +94,12 @@ dependencies {
     implementation(libs.camera.extensions)
 
     implementation(libs.accompanist.permissions)
+    implementation("androidx.compose.material:material-icons-extended:1.4.0")
+    implementation("io.coil-kt:coil-compose:1.4.0")
+
+    implementation("com.google.mlkit:pose-detection:18.0.0-beta4")
+    implementation("com.google.mlkit:pose-detection-accurate:18.0.0-beta4")
+
 
 }
 

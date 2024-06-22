@@ -17,7 +17,7 @@ interface ApiService {
     @Multipart
     @POST("photo/uploadtogcp")
     suspend fun uploadImage(
-        @Part filePart: MultipartBody.Part
+        @Part image: MultipartBody.Part
     ): Response<UploadImageResponse>
 }
 

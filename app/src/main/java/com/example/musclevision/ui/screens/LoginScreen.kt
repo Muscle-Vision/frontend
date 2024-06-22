@@ -1,11 +1,14 @@
 package com.example.musclevision.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -23,16 +26,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.musclevision.R
+import com.example.musclevision.ui.theme.MuscleVisionTheme
 import com.example.musclevision.ui.theme.dancingScript
 
 
 @Composable
 fun LoginScreen(
-    onNextButtonClicked: ()-> Unit,
+    onEnrollButtonClicked: ()-> Unit,
+    onLoginButtonClicked: () -> Unit,
     modifier: Modifier = Modifier
 ){
     var username by remember { mutableStateOf("") }
@@ -85,9 +91,22 @@ fun LoginScreen(
             )
         )
         Spacer(modifier = Modifier.height(30.dp))
-        Button(onClick = onNextButtonClicked) {
+
+        BasicText(
+            text = "회원가입하기",
+            style = TextStyle(
+                textDecoration = TextDecoration.Underline,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+            modifier = Modifier.clickable{onEnrollButtonClicked()}
+        )
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        Button(onClick = onLoginButtonClicked) {
             Text("로그인")
         }
+
         Spacer(modifier = Modifier.height(120.dp))
     }
 }
@@ -96,6 +115,6 @@ fun LoginScreen(
 @Preview
 @Composable
 fun LoginPreivew(){
-    LoginScreen(onNextButtonClicked = {})
+    LoginScreen(onEnrollButtonClicked = {},onLoginButtonClicked = {})
 }
 

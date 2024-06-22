@@ -31,8 +31,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.musclevision.ui.screens.CameraScreen
 import com.example.musclevision.ui.screens.EnrollScreen
+import com.example.musclevision.ui.screens.GalleryScreen
 import com.example.musclevision.ui.screens.GreetingScreen
 import com.example.musclevision.ui.screens.LoginScreen
+import com.example.musclevision.ui.screens.MainScreen
 import com.example.musclevision.ui.screens.ReportScreen
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
@@ -40,7 +42,9 @@ enum class MuscleVisionScreen(@StringRes val title: Int) {
     Greeting(title = R.string.app_name),
     Login(title = R.string.login),
     Enroll(title = R.string.enroll),
+    Main(title = R.string.main),
     Camera(title = R.string.camera),
+    Gallery(title = R.string.gallery),
     Report(title = R.string.analyze)
 }
 
@@ -83,7 +87,7 @@ fun MuscleVisionApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     // Get the name of the current screen
     val currentScreen = MuscleVisionScreen.valueOf(
-        backStackEntry?.destination?.route ?: MuscleVisionScreen.Greeting.name
+        backStackEntry?.destination?.route ?: MuscleVisionScreen.Login.name
     )
 
     Scaffold(
@@ -98,28 +102,20 @@ fun MuscleVisionApp(
             innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = MuscleVisionScreen.Greeting.name,
+            startDestination = MuscleVisionScreen.Login.name,
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
         ){
-            composable(route = MuscleVisionScreen.Greeting.name) {
-                GreetingScreen(
-                    onNextButtonClicked = {
-                        navController.navigate(MuscleVisionScreen.Login.name)
-                        Log.d("ClickButton","success")
-                    },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                )
-            }
             composable(route = MuscleVisionScreen.Login.name) {
                 LoginScreen(
-                    onNextButtonClicked = {
+                    onEnrollButtonClicked = {
                         navController.navigate(MuscleVisionScreen.Enroll.name)
                         Log.d("ClickButton","success")
+                    },
+                    onLoginButtonClicked = {
+                        navController.navigate(MuscleVisionScreen.Main.name)
                     },
                     modifier = Modifier
                         .fillMaxSize()
@@ -128,8 +124,34 @@ fun MuscleVisionApp(
             }
             composable(route = MuscleVisionScreen.Enroll.name) {
                 EnrollScreen(
-                    onNextButtonClicked = {
+                    onFinishEnrollButtonClicked = {
+                        navController.navigate(MuscleVisionScreen.Login.name)
+                        Log.d("ClickButton","success")
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                )
+            }
+            composable(route = MuscleVisionScreen.Main.name) {
+                MainScreen(
+                    onToGalleryButtonClicked = {
+                        navController.navigate(MuscleVisionScreen.Gallery.name)
+                        Log.d("ClickButton","success")
+                    },
+                    onToCameraButtonClicked = {
                         navController.navigate(MuscleVisionScreen.Camera.name)
+                        Log.d("ClickButton","success")
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                )
+            }
+            composable(route = MuscleVisionScreen.Gallery.name) {
+                GalleryScreen(
+                    onSelectButtonClicked = {
+                        navController.navigate(MuscleVisionScreen.Report.name)
                         Log.d("ClickButton","success")
                     },
                     modifier = Modifier
