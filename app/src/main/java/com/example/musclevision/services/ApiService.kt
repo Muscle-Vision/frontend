@@ -1,13 +1,12 @@
 package com.example.musclevision.services
 
-import androidx.annotation.StringRes
 import com.example.musclevision.data.UploadImageResponse
 import com.google.mlkit.vision.pose.PoseLandmark
 import okhttp3.MultipartBody
+import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Multipart
-import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
 import kotlin.math.atan2
@@ -19,6 +18,9 @@ interface ApiService {
     suspend fun uploadImage(
         @Part image: MultipartBody.Part
     ): Response<UploadImageResponse>
+
+    @POST("auth/google")
+    fun sendTokenToServer(@Body idToken: String?): Call<Void>
 }
 
 fun getAngle(firstPoint: PoseLandmark, midPoint: PoseLandmark, lastPoint: PoseLandmark): Double {

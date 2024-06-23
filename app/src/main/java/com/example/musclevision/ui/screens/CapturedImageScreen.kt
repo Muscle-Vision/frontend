@@ -1,7 +1,7 @@
 package com.example.musclevision.ui.screens
 
 import android.net.Uri
-import android.widget.Button
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -52,10 +53,10 @@ fun CapturedImageScreen(
                 .padding(vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            androidx.compose.material3.Button(onClick = onRetakeButtonClicked) {
+            Button(onClick = onRetakeButtonClicked) {
                 Text("다시찍기")
             }
-            androidx.compose.material3.Button(onClick = onAnalyzeButtonClicked) {
+            Button(onClick = onAnalyzeButtonClicked) {
                 Text("분석하기")
             }
         }

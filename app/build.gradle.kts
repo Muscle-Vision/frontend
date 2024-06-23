@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+
 }
 
 android {
@@ -53,6 +54,7 @@ android {
 dependencies {
     implementation(libs.pose.detection.common)
     implementation(libs.androidx.constraintlayout.compose)
+//    implementation(libs.androidx.material3.android)
     val lifecycle_version = "2.7.0"
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -100,6 +102,6 @@ dependencies {
     implementation("com.google.mlkit:pose-detection:18.0.0-beta4")
     implementation("com.google.mlkit:pose-detection-accurate:18.0.0-beta4")
 
-
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 }
 

@@ -9,4 +9,6 @@
     <string name="captured_image">Captured Image</string>
     <string name="analyze">Analysis Report</string>
     <string name="next">Next</string>
+    <string name="default_web_client_id">401793269061-q8ju69d0klg8da5aahtsm5mhip89jc9c.apps.googleusercontent.com</string>
+    <string name="default_web_client_pw">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</string>
 </resources>
