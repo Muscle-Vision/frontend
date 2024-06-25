@@ -3,6 +3,10 @@
 package com.example.musclevision.ui.screens
 
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.Uri
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -13,9 +17,10 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -23,44 +28,26 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleCoroutineScope
-import androidx.lifecycle.lifecycleScope
-import com.example.musclevision.MainActivity
-import com.example.musclevision.data.UploadImageResponse
-import com.example.musclevision.services.ApiService
-
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.gson.GsonBuilder
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.pose.PoseDetection
-import com.google.mlkit.vision.pose.PoseLandmark
-import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions
-import kotlinx.coroutines.launch
-import okhttp3.MediaType
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.converter.scalars.ScalarsConverterFactory
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.Executor
-import kotlin.reflect.typeOf
 
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -76,12 +63,8 @@ fun CameraScreen(
         .build() }
     val camera = remember { mutableStateOf<Camera?>(null) }
     val previewView = remember { PreviewView(context) }
-
     val permissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
-
     val outputDirectory = remember { File(context.filesDir, "camera_capture").apply { mkdirs() } }
-
-    val lifecycleOwner = LocalLifecycleOwner.current
 
     // 카메라 변수를 초기화하기 위한 LaunchedEffect
     LaunchedEffect(permissionState) {
@@ -137,11 +120,8 @@ fun CameraScreen(
                 captureImage(
                     imageCapture = imageCapture,
                     outputDirectory = outputDirectory,
-                    onSuccess = { file, poseLandmarks ->
-                        val uri = Uri.fromFile(file)
-                        onImageCaptured(uri)
-                        Log.d("CameraScreen", "Image captured and saved: ${file.absolutePath}")
-                        Log.d("CameraScreen", "Detected pose landmarks: $poseLandmarks")
+                    onSuccess = { file ->
+                        onImageCaptured(Uri.fromFile(file))
                     },
                     onError = { errorMessage ->
                         Log.e("CameraScreen", "Error capturing image: $errorMessage")
@@ -149,44 +129,6 @@ fun CameraScreen(
                     context
                 )
             },
-//            onClick = {
-//                captureImage(
-//                    imageCapture = imageCapture,
-//                    outputDirectory = outputDirectory,
-//                    onSuccess = { file, poseLandmarks  ->
-//                        lifecycleOwner.lifecycleScope.launch {
-//                            try {
-//                                val response = uploadImage(file)
-//                                Log.d("CameraScreen","응답으로 받은것: $response , $file")
-//                                if (response.isSuccessful) {
-//                                    // 업로드 성공
-//                                    val responseBody = response.body()
-//                                    // 서버 응답에 따라 적절한 처리를 수행합니다.
-//                                    Log.d("CameraScreen","성공 : $responseBody")
-//                                } else {
-//                                    // 업로드 실패
-//                                    val errorMessage = response.message()
-//
-//                                    // 오류 처리
-//                                    Log.d("CameraScreen","에러로 받은것: $errorMessage")
-//                                }
-//                            } catch (e: Exception) {
-//                                // 예외 처리
-//                                Log.e("CameraScreen", "Error uploading image: ${e.message}")
-//                            }
-//                        }
-//                        // 이미지 캡처 성공 시 여기에 원하는 작업을 추가하세요.
-//                        Log.d("CameraScreen", "Image captured and saved: ${file.absolutePath}")
-//                        Log.d("CameraScreen", "Detected pose landmarks: $poseLandmarks")
-//                    },
-//                    onError = { errorMessage ->
-//                        // 이미지 캡처 실패 시 여기에 오류 처리를 추가하세요.
-//                        Log.e("CameraScreen", "Error capturing image: $errorMessage")
-//                    },
-//                    context
-//                )
-//
-//            },
             modifier = Modifier
                 .size(100.dp)
                 .align(Alignment.CenterHorizontally) // Center horizontally
@@ -199,7 +141,7 @@ fun CameraScreen(
 fun captureImage(
     imageCapture: ImageCapture,
     outputDirectory: File,
-    onSuccess: (File, List<PoseLandmark>) -> Unit,
+    onSuccess: (File) -> Unit,
     onError: (String) -> Unit,
     context: Context
 ) {
@@ -213,10 +155,7 @@ fun captureImage(
     imageCapture.takePicture(outputOptions, ContextCompat.getMainExecutor(context),
         object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                detectPose(outputFile, context) { poseLandmarks ->
-                    onSuccess(outputFile, poseLandmarks)
-                }
-//                onSuccess(outputFile)
+                onSuccess(outputFile)
                 // 이미지 캡처 및 저장 후에 이미지를 서버로 업로드
             }
             override fun onError(exception: ImageCaptureException) {
@@ -225,41 +164,34 @@ fun captureImage(
         }
     )
 }
-fun detectPose(imageFile: File, context: Context, onPoseDetected: (List<PoseLandmark>) -> Unit) {
-    val poseDetectorOptions = AccuratePoseDetectorOptions.Builder()
-        .setDetectorMode(AccuratePoseDetectorOptions.SINGLE_IMAGE_MODE)
-        .build()
 
-    val poseDetector = PoseDetection.getClient(poseDetectorOptions)
-
-    val image = InputImage.fromFilePath(context, Uri.fromFile(imageFile))
-    poseDetector.process(image)
-        .addOnSuccessListener { pose ->
-            val poseLandmarks = pose.allPoseLandmarks
-            onPoseDetected(poseLandmarks)
-        }
-        .addOnFailureListener { e ->
-            Log.e("PoseDetection", "Pose detection failed: ${e.message}")
-            onPoseDetected(emptyList())
-        }
+@Composable
+fun LevelCanvas(roll: Float) {
+    Canvas(modifier = Modifier.size(200.dp)) {
+        drawLevel(this, roll)
+    }
 }
 
-suspend fun uploadImage(imageFile: File): Response<UploadImageResponse> {
-    // Retrofit 객체 생성
-    val retrofit = Retrofit.Builder()
-        .baseUrl("http://35.216.89.227:9090/")
-//        .addConverterFactory(ScalarsConverterFactory.create())
-        .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
-        .build()
+fun drawLevel(drawScope: DrawScope, roll: Float) {
+    val centerX = drawScope.size.width / 2
+    val centerY = drawScope.size.height / 2
 
-    // Retrofit 서비스 생성
-    val service = retrofit.create(ApiService::class.java)
+    // 빨간색 수평선
+    drawScope.drawLine(
+        color = Color.Red,
+        start = androidx.compose.ui.geometry.Offset(centerX - 100, centerY),
+        end = androidx.compose.ui.geometry.Offset(centerX + 100, centerY),
+        strokeWidth = 5f
+    )
 
-    // 이미지 파일을 RequestBody로 변환
-    val requestFile = RequestBody.create(MediaType.parse("image/jpeg"), imageFile)
-    val body = MultipartBody.Part.createFormData("image", imageFile.name, requestFile)
-    Log.d("CameraScreen","$requestFile, ${body.javaClass}")
-    // 서버로 업로드 요청
-    return service.uploadImage(body)
+    // 파란색 원 (수평기 인디케이터)
+    val rollInPixels = roll * 5 // Roll 각도에 따라 픽셀로 변환하여 조정
+    val indicatorY = centerY + rollInPixels
+    drawScope.drawCircle(
+        color = Color.Blue,
+        center = androidx.compose.ui.geometry.Offset(centerX, indicatorY),
+        radius = 10f
+    )
+
+
 }
-

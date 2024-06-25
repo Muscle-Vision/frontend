@@ -32,6 +32,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.musclevision.data.UnbalanceFigureDto
 import com.example.musclevision.ui.screens.CameraScreen
 import com.example.musclevision.ui.screens.CapturedImageScreen
 import com.example.musclevision.ui.screens.EnrollScreen
@@ -41,6 +42,7 @@ import com.example.musclevision.ui.screens.LoginScreen
 import com.example.musclevision.ui.screens.MainScreen
 import com.example.musclevision.ui.screens.ReportScreen
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.gson.Gson
 
 enum class MuscleVisionScreen(@StringRes val title: Int) {
     Greeting(title = R.string.app_name),
@@ -94,7 +96,6 @@ fun MuscleVisionApp(
     val currentScreen = MuscleVisionScreen.valueOf(
         backStackEntry?.destination?.route?.substringBefore("?") ?: MuscleVisionScreen.Login.name
     )
-
     Scaffold(
         topBar = {
             MuscleVisionAppBar(
@@ -154,10 +155,11 @@ fun MuscleVisionApp(
             }
             composable(route = MuscleVisionScreen.Gallery.name) {
                 GalleryScreen(
-                    onSelectButtonClicked = {
-                        navController.navigate(MuscleVisionScreen.Report.name)
+                    onSelectButtonClicked = { uri, receivedUri ->
+                        navController.navigate("${MuscleVisionScreen.Report.name}?uri=${Uri.encode(uri.toString())}&receivedUri=${Uri.encode(receivedUri)}")
                         Log.d("ClickButton","success")
                     },
+//                    "${MuscleVisionScreen.CapturedImage.name}?uri=${Uri.encode(uri.toString())}&description=${Uri.encode(descriptionJson)}
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp)
@@ -173,26 +175,17 @@ fun MuscleVisionApp(
                             .padding(16.dp)
                     )
             }
-//            composable(route = MuscleVisionScreen.CapturedImage.name) {
-//                CapturedImageScreen(
-//                    onAnalyzeButtonClicked = {
-//                        navController.navigate(MuscleVisionScreen.Report.name)
-//                        Log.d("ClickButton", "success")
-//                    },
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(16.dp)
-//                )
-//            }
             composable(
                 route = "${MuscleVisionScreen.CapturedImage.name}?uri={uri}",
-                arguments = listOf(navArgument("uri") { type = NavType.StringType })
+                arguments = listOf(
+                    navArgument("uri"){type = NavType.StringType}
+                )
             ) { backStackEntry ->
                 val uriString = backStackEntry.arguments?.getString("uri")
-                uriString?.let { uri ->
+                uriString?.let {uri ->
                     CapturedImageScreen(
-                        onAnalyzeButtonClicked = {
-                            navController.navigate(MuscleVisionScreen.Report.name)
+                        onAnalyzeButtonClicked = { receivedUri ->
+                            navController.navigate("${MuscleVisionScreen.Report.name}?uri=${Uri.encode(uri.toString())}&receivedUri=${Uri.encode(receivedUri)}")
                         },
                         onRetakeButtonClicked = {
                             navController.navigate(MuscleVisionScreen.Camera.name)
@@ -201,24 +194,58 @@ fun MuscleVisionApp(
                     )
                 }
             }
-//            composable(route = MuscleVisionScreen.CapturedImage.name) {
-//                CapturedImageScreen(
-//                    onAnalyzeButtonClicked = {
-//                        navController.navigate(MuscleVisionScreen.Report.name)
-//                    },
-//                    imageUri = Uri.EMPTY
+//            composable(
+//                route = "${MuscleVisionScreen.CapturedImage.name}?uri={uri}&description={description}",
+//                arguments = listOf(
+//                    navArgument("uri") { type = NavType.StringType },
+//                    navArgument("description"){ type = NavType.StringType },
 //                )
+//            ) { backStackEntry ->
+//                val uriString = backStackEntry.arguments?.getString("uri")
+//                val descriptionJson = backStackEntry.arguments?.getString("description")
+//                val gson = Gson()
+//                val description = gson.fromJson(descriptionJson, UnbalanceFigureDto::class.java)
+//                uriString?.let { uri ->
+//                    description?.let{ description ->
+//                        CapturedImageScreen(
+//                            onAnalyzeButtonClicked = {
+//                                navController.navigate(MuscleVisionScreen.Report.name)
+//                            },
+//                            onRetakeButtonClicked = {
+//                                navController.navigate(MuscleVisionScreen.Camera.name)
+//                            },
+//                            imageUri = Uri.parse(uri),
+//                            description = description
+//                        )
+//                    }
+//                }
 //            }
-            composable(route = MuscleVisionScreen.Report.name) {
-                ReportScreen(
-                    onNextButtonClicked = {
-                        navController.navigate(MuscleVisionScreen.Greeting.name)
-                        Log.d("ClickButton","success")
-                    },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                )
+            composable(
+                route = "${MuscleVisionScreen.Report.name}?uri={uri}&receivedUri={receivedUri}",
+                arguments = listOf(
+                    navArgument("uri") { type = NavType.StringType },
+                    navArgument("receivedUri"){type = NavType.StringType}
+                )) {backStackEntry ->
+                    val uriString = backStackEntry.arguments?.getString("uri")
+                    val receivedUriString = backStackEntry.arguments?.getString("receivedUri")
+                    uriString?.let{
+                        uri ->
+                        receivedUriString?.let{
+                            receivedUri ->
+                            ReportScreen(
+                                onNextButtonClicked = {
+                                    navController.navigate(MuscleVisionScreen.Greeting.name)
+                                    Log.d("ClickButton","success")
+                                },
+                                imageUri = Uri.parse(uri),
+                                receivedUri = receivedUri,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                            )
+                    }
+
+                    }
             }
         }
     }
