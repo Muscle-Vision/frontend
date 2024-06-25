@@ -19,9 +19,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -41,6 +46,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -76,6 +83,8 @@ fun LoginScreen(
 ){
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var passwordVisibility by remember { mutableStateOf(false) }
+
 
     // 구글 로그인 클라이언트 설정
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -132,6 +141,7 @@ fun LoginScreen(
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -140,7 +150,16 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(0.8f),
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
-            )
+            ),
+            visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
+                    Icon(
+                        imageVector = if (passwordVisibility) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                        contentDescription = if (passwordVisibility) "비밀번호 숨기기" else "비밀번호 보기"
+                    )
+                }
+            }
         )
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -148,7 +167,7 @@ fun LoginScreen(
             text = "회원가입",
             style = TextStyle(
                 textDecoration = TextDecoration.Underline,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = md_theme_dark_onPrimaryContainer
                 ),
             modifier = Modifier.clickable{onEnrollButtonClicked()}
         )

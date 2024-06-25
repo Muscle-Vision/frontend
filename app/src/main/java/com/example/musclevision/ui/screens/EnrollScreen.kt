@@ -56,7 +56,7 @@ fun EnrollScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "회원가입", style = MaterialTheme.typography.headlineLarge)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(30.dp))
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
@@ -98,7 +98,7 @@ fun EnrollScreen(
             }
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(30.dp))
 
         Button(onClick = {
             onFinishEnrollButtonClicked()
