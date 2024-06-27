@@ -10,23 +10,44 @@ import android.media.ExifInterface
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SentimentDissatisfied
+import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
+import androidx.compose.material.icons.filled.SentimentVeryDissatisfied
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -36,24 +57,28 @@ import com.example.musclevision.data.UnbalanceFigureDto
 import com.example.musclevision.data.UploadImageResponse
 import com.example.musclevision.services.ApiService
 import com.example.musclevision.services.AuthInterceptor
-import com.example.musclevision.services.AuthManager
 import com.example.musclevision.services.AuthManager.accessToken
 import com.example.musclevision.services.getAngle
 import com.example.musclevision.services.getDescription
-import com.example.musclevision.services.uploadImage
 import com.example.musclevision.services.uriToFile
+import com.example.musclevision.ui.FirstNeckStretching
+import com.example.musclevision.ui.FirstPelvisStretching
+import com.example.musclevision.ui.FirstShoulderStretching
+import com.example.musclevision.ui.SecondNeckStretching
+import com.example.musclevision.ui.SecondPelvisStretching
+import com.example.musclevision.ui.SecondShoulderStretching
+import com.example.musclevision.ui.ThirdPelvisStretching
+import com.example.musclevision.ui.ThirdShoulderStretching
+import com.example.musclevision.ui.theme.md_theme_dark_onPrimaryContainer
 import com.google.gson.GsonBuilder
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.pose.PoseDetection
 import com.google.mlkit.vision.pose.PoseLandmark
 import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType
-import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
-import okhttp3.RequestBody
-import retrofit2.Call
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -61,8 +86,10 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
+import kotlin.math.absoluteValue
+import kotlin.random.Random
 
-
+private const val BASE_URL = "http://35.216.89.227:9090/"
 @Composable
 fun ReportScreen(
     onNextButtonClicked: ()-> Unit,
@@ -70,10 +97,14 @@ fun ReportScreen(
     modifier: Modifier = Modifier,
     receivedUri: String
 ){
+
     var analyzedImageUri by remember { mutableStateOf<Uri?>(null) }
     var analyzedFigures by remember { mutableStateOf<UnbalanceFigureDto?>(null) }
+
+    val scope = rememberCoroutineScope()
+    var isBottomSheetOpen by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
-    // `remember`를 사용하여 `file`을 저장
     val file by remember(imageUri) {
         mutableStateOf(uriToFile(imageUri, context))
     }
@@ -82,73 +113,266 @@ fun ReportScreen(
 
     val updatedAnalyzedImageUri by rememberUpdatedState(newValue = analyzedImageUri)
 
-
-    Log.d("ReportScreenGetScore",receivedUri)
-
-    // `file`이 null이 아닌 경우에만 `LaunchedEffect` 실행
     LaunchedEffect(file) {
         if (file != null && updatedAnalyzedImageUri == null) {
             detectPose(file!!, context) { uri, description ->
                 analyzedImageUri = uri
                 analyzedFigures = description
-                Log.d("ReportScreen","$uri, $description")
             }
         }
         try {
             val response = withContext(Dispatchers.IO) { getScore(receivedUri) }
-            Log.d("ReportScreenGetScore","응답으로 받은것: $response")
             if (response.isSuccessful) {
-                // 업로드 성공
                 score = response.body()?.result
-                // 서버 응답에 따라 적절한 처리를 수행합니다.
-                Log.d("ReportScreenGetScore","성공 : ${response.body()?.photoRoute}")
-                Log.d("ReportScreenGetScore",score!!)
-
             } else {
-                // 업로드 실패
                 val errorMessage = response.message()
-
-                // 오류 처리
-                Log.d("ReportScreenGetScore","에러로 받은것: $errorMessage")
             }
         } catch (e: Exception) {
-            // 예외 처리
             Log.e("ReportScreenGetScore", "Error get score: ${e.message}")
         }
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("나의 점수 :$score")
+        Text(
+            text = "나의 점수 :$score",
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Spacer(modifier = Modifier.height(16.dp))
         if (analyzedImageUri != null) {
-            val painter: Painter = rememberImagePainter(
+            val painter = rememberImagePainter(
                 data = analyzedImageUri,
                 builder = {
                     crossfade(true)
-                    error(R.drawable.ic_google_logo) // 에러 시 표시할 이미지
+                    error(R.drawable.ic_google_logo)
                 }
             )
             Box(
                 modifier = Modifier
-                    .padding(vertical = 8.dp)
                     .fillMaxWidth()
-                    .height(400.dp)
+                    .height(340.dp)
             ) {
                 Image(
                     painter = painter,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(40.dp))
                 )
+            }
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                color = Color(0xFF48464F),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .height(130.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(" ")
+                        Text("목")
+                        Text("어깨")
+                        Text("골반")
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .height(130.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+
+                    ) {
+                        Text("각도")
+                        Text(String.format("%.2f", analyzedFigures?.neckFigure?.first))
+                        Text(String.format("%.2f", analyzedFigures?.shoulderFigure?.first))
+                        Text(String.format("%.2f", analyzedFigures?.pelvisFigure?.first))
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(0.4f)
+                            .height(130.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+
+                    ) {
+                        Text("진단")
+                        Text("${analyzedFigures?.neckFigure?.second}")
+                        Text("${analyzedFigures?.shoulderFigure?.second}")
+                        Text("${analyzedFigures?.pelvisFigure?.second}")
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .height(130.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+
+                    ) {
+                        Text("")
+                        Icon(
+                            imageVector =
+                            when (analyzedFigures?.neckFigure?.second) {
+                                "정상" -> Icons.Default.SentimentSatisfiedAlt
+                                "약간의 불균형" -> Icons.Default.SentimentDissatisfied
+                                "심한 불균형" -> Icons.Default.SentimentVeryDissatisfied
+                                else -> Icons.Default.Warning
+                            },
+                            tint = when (analyzedFigures?.neckFigure?.second) {
+                                "정상" -> Color.Green
+                                "약간의 불균형" -> Color.Yellow
+                                "심한 불균형" -> Color.Red
+                                else -> Color.White
+                            },
+                            contentDescription = "진단 아이콘"
+                        )
+                        Icon(
+                            imageVector =
+                            when (analyzedFigures?.shoulderFigure?.second) {
+                                "정상" -> Icons.Default.SentimentSatisfiedAlt
+                                "약간의 불균형" -> Icons.Default.SentimentDissatisfied
+                                "심한 불균형" -> Icons.Default.SentimentVeryDissatisfied
+                                else -> Icons.Default.Warning
+                            },
+                            tint = when (analyzedFigures?.shoulderFigure?.second) {
+                                "정상" -> Color.Green
+                                "약간의 불균형" -> Color.Yellow
+                                "심한 불균형" -> Color.Red
+                                else -> Color.White
+                            },
+                            contentDescription = "진단 아이콘"
+                        )
+                        Icon(
+                            imageVector =
+                            when (analyzedFigures?.pelvisFigure?.second) {
+                                "정상" -> Icons.Default.SentimentSatisfiedAlt
+                                "약간의 불균형" -> Icons.Default.SentimentDissatisfied
+                                "심한 불균형" -> Icons.Default.SentimentVeryDissatisfied
+                                else -> Icons.Default.Warning
+                            },
+                            tint = when (analyzedFigures?.pelvisFigure?.second) {
+                                "정상" -> Color.Green
+                                "약간의 불균형" -> Color.Yellow
+                                "심한 불균형" -> Color.Red
+                                else -> Color.White
+                            },
+                            contentDescription = "진단 아이콘"
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(50.dp))
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                color = md_theme_dark_onPrimaryContainer
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember {
+                                MutableInteractionSource()
+                            },
+                            indication = null,
+                            onClick = {
+                                scope.launch { isBottomSheetOpen = !isBottomSheetOpen }
+                            }
+                        )
+                        .fillMaxSize(),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(modifier = Modifier
+                            .height(4.dp)
+                            .width(150.dp)
+                            .border(width = 2.dp, color = Color(0xFF48464F))
+
+                        )
+                        Text("하이")
+                    }
+
+                }
             }
         } else {
             Text("이미지를 처리 중입니다...")
         }
     }
+    if (isBottomSheetOpen){
+        StretchingBottomSheet(
+            closeSheet = {isBottomSheetOpen = false},
+            description = analyzedFigures!!
+        )
+    }
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StretchingBottomSheet(
+    modifier: Modifier = Modifier,
+    closeSheet : () -> Unit,
+    description: UnbalanceFigureDto
+){
+    val sheetState = rememberModalBottomSheetState(
+    )
+
+    val stretchingScreenList =  mutableListOf<String>()
+
+    ModalBottomSheet(
+        modifier = Modifier.padding(16.dp),
+        onDismissRequest = closeSheet,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        containerColor = md_theme_dark_onPrimaryContainer,
+        dragHandle = {}
+    ) {
+        if(description.neckFigure.first.absoluteValue > 3){
+            stretchingScreenList.add("FirstNeckStretching")
+            stretchingScreenList.add("SecondNeckStretching")
+        }
+        if(description.shoulderFigure.first.absoluteValue > 3){
+            stretchingScreenList.add("FirstShoulderStretching")
+            stretchingScreenList.add("SecondShoulderStretching")
+            stretchingScreenList.add("ThirdShoulderStretching")
+        }
+        if(description.pelvisFigure.first.absoluteValue > 3){
+            stretchingScreenList.add("FirstPelvisStretching")
+            stretchingScreenList.add("SecondPelvisStretching")
+            stretchingScreenList.add("ThirdPelvisStretching")
+        }
+
+        val screenName = stretchingScreenList[Random.nextInt(stretchingScreenList.size)]
+        Log.d("ReportScreen", screenName)
+        when(screenName){
+            "FirstNeckStretching" -> FirstNeckStretching()
+            "SecondNeckStretching" -> SecondNeckStretching()
+            "FirstShoulderStretching" -> FirstShoulderStretching()
+            "SecondShoulderStretching" -> SecondShoulderStretching()
+            "ThirdShoulderStretching" -> ThirdShoulderStretching()
+            "FirstPelvisStretching" -> FirstPelvisStretching()
+            "SecondPelvisStretching" -> SecondPelvisStretching()
+            "ThirdPelvisStretching" -> ThirdPelvisStretching()
+        }
+    }
+}
+
+
 
 
 fun detectPose(
@@ -166,13 +390,10 @@ fun detectPose(
     poseDetector.process(image)
         .addOnSuccessListener { pose ->
             val poseLandmarks = pose.allPoseLandmarks
-//            onPoseDetected(poseLandmarks)
             val result = drawPointsOnImage(imageFile, poseLandmarks, context)
             val drawnImageFile = result.first
             val description = result.second
-            Log.d("CameraScreen","$description")
 
-            // 콜백으로 그려진 이미지의 Uri를 반환
             onImageProcessed(Uri.fromFile(drawnImageFile), description)
         }
         .addOnFailureListener { e ->
@@ -186,14 +407,11 @@ fun drawPointsOnImage(
     poseLandmarks: List<PoseLandmark>,
     context: Context
 ): Pair<File,UnbalanceFigureDto> {
-    // Load original image bitmap
     val bitmap = BitmapFactory.decodeFile(originalImageFile.absolutePath)
 
-    // Read Exif orientation information
     val exif = ExifInterface(originalImageFile.absolutePath)
     val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
 
-    // Determine rotation angle
     val rotationAngle = when (orientation) {
         ExifInterface.ORIENTATION_ROTATE_90 -> 90
         ExifInterface.ORIENTATION_ROTATE_180 -> 180
@@ -201,7 +419,6 @@ fun drawPointsOnImage(
         else -> 0
     }
 
-    // Rotate bitmap if necessary
     val rotatedBitmap = if (rotationAngle != 0) {
         val matrix = Matrix()
         matrix.postRotate(rotationAngle.toFloat())
@@ -210,13 +427,10 @@ fun drawPointsOnImage(
         bitmap
     }
 
-    // Create a mutable bitmap copy from the original bitmap to draw on
     val mutableBitmap = rotatedBitmap.copy(Bitmap.Config.ARGB_8888, true)
 
-    // Create a Canvas to draw on the mutable bitmap
     val canvas = Canvas(mutableBitmap)
 
-    // Paint settings for drawing landmarks
     val paint = Paint().apply {
         color = ContextCompat.getColor(context, android.R.color.background_light)
         style = Paint.Style.FILL
@@ -231,7 +445,6 @@ fun drawPointsOnImage(
         poseLandmarks[23],
         poseLandmarks[24],
     )
-    Log.d("ReportScreen" , "${getAngle(mainLandmark[0],mainLandmark[1])}")
 
     val descriptions = UnbalanceFigureDto(
         getDescription(getAngle(mainLandmark[0],mainLandmark[1])),
@@ -239,16 +452,14 @@ fun drawPointsOnImage(
         getDescription(getAngle(mainLandmark[4],mainLandmark[5]))
     )
 
-    // Draw circles (landmarks) on the Canvas based on PoseLandmarks
-    for (landmark in mainLandmark) {
-        Log.d("ReportScreen","(${landmark.landmarkType},${landmark.position})")
-        // landmarkType 7,8(귀), 11,12(어깨), 23,24(엉덩이)
 
+    for (landmark in mainLandmark) {
+        // landmarkType 7,8(귀), 11,12(어깨), 23,24(엉덩이)
         val landmarkPosition = landmark.position
         canvas.drawCircle(
             landmarkPosition.x,
             landmarkPosition.y,
-            20f, // Circle radius (adjust as needed)
+            20f,
             paint
         )
     }
@@ -262,7 +473,6 @@ fun drawPointsOnImage(
         )
     }
 
-    // Save the modified bitmap to a new file
     val drawnImageFile = File(context.filesDir, "drawn_${originalImageFile.name}")
     try {
         val outputStream = FileOutputStream(drawnImageFile)
@@ -283,16 +493,14 @@ suspend fun getScore(imageUri: String): Response<UploadImageResponse> {
         .addInterceptor(AuthInterceptor(accessToken!!))
         .build()
 
-    // Retrofit 객체 생성
     val retrofit = Retrofit.Builder()
-        .baseUrl("http://35.216.89.227:9090/")
+        .baseUrl(BASE_URL)
         .client(okHttpClient)
-//        .addConverterFactory(ScalarsConverterFactory.create())
         .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
         .build()
 
-    // Retrofit 서비스 생성
     val service = retrofit.create(ApiService::class.java)
 
     return service.getResult(imageUri)
 }
+

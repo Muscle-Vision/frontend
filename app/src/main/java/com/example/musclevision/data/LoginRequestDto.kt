@@ -1,7 +1,6 @@
 package com.example.musclevision.data
 
-data class SignUpDto(
-    val name: String,
+data class LoginRequestDto(
     val loginId: String,
     val password: String
 )

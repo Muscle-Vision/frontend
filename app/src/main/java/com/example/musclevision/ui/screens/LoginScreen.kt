@@ -1,6 +1,5 @@
 package com.example.musclevision.ui.screens
 
-import android.media.session.MediaSession.Token
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,25 +15,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
 import com.example.musclevision.R
-import com.example.musclevision.data.MemberRequestDto
+import com.example.musclevision.data.LoginRequestDto
 import com.example.musclevision.data.TokenDto
 import com.example.musclevision.services.ApiService
 import com.example.musclevision.services.AuthManager
@@ -82,21 +77,15 @@ fun LoginScreen(
     modifier: Modifier = Modifier
 ){
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     var passwordVisibility by remember { mutableStateOf(false) }
 
-
-    // 구글 로그인 클라이언트 설정
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-//        .requestScopes()
         .requestIdToken(getString(context, R.string.default_web_client_id))
         .requestEmail()
         .build()
-    Log.d("LoginScreen", getString(context, R.string.default_web_client_id))
     val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(context, gso)
     googleSignInClient.signOut()
 
-    // ActivityResultLauncher 설정
     val signInLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         handleSignInResult(task,onLoginButtonClicked)
@@ -151,7 +140,8 @@ fun LoginScreen(
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
             ),
-            visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation =
+                if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
                     Icon(
@@ -187,7 +177,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        GoogleSignInButton{signInLauncher.launch(googleSignInClient.signInIntent)}  // 구글 로그인 버튼 추가
+        GoogleSignInButton{signInLauncher.launch(googleSignInClient.signInIntent)}
 
         Spacer(modifier = Modifier.height(120.dp))
     }
@@ -207,14 +197,14 @@ fun GoogleSignInButton(onGoogleLoginClicked: () -> Unit) {
             defaultElevation = 2.dp,
             pressedElevation = 4.dp
         ),
-        border = BorderStroke(1.dp, md_theme_dark_outline) // 흰색 테두리 추가
+        border = BorderStroke(1.dp, md_theme_dark_outline)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_google_logo), // 구글 로고 이미지
+                painter = painterResource(id = R.drawable.ic_google_logo),
                 contentDescription = "Google Logo",
                 modifier = Modifier.size(24.dp)
             )
@@ -225,7 +215,7 @@ fun GoogleSignInButton(onGoogleLoginClicked: () -> Unit) {
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = md_theme_dark_outline // 텍스트 색상을 흰색으로 설정
+                    color = md_theme_dark_outline
                 )
             )
         }
@@ -234,17 +224,9 @@ fun GoogleSignInButton(onGoogleLoginClicked: () -> Unit) {
 fun handleSignInResult(completedTask: Task<GoogleSignInAccount>, onLoginButtonClicked: () -> Unit) {
     try {
         val account = completedTask.getResult(ApiException::class.java)
-        Log.d("LoginScreen", "signInResult:success, account: ${account?.email}")
-        Log.d("LoginScreen", "signInResult:success, account: ${account?.familyName}")
-        Log.d("LoginScreen", "signInResult:success, account: ${account?.givenName}")
-        Log.d("LoginScreen", "signInResult:success, account: ${account?.displayName}")
-        Log.d("LoginScreen", "signInResult:success, account: ${account?.photoUrl}")
-        Log.d("LoginScreen", "signInResult:success, account: ${account?.idToken}")
 
         val idToken  = account?.idToken
-//        Log.d("LoginScreen", idToken!!)
         sendTokenToServer(idToken, onLoginButtonClicked)
-        // 계정 정보를 사용해 상태를 업데이트합니다.
     } catch (e: ApiException) {
         Log.w("LoginScreen", "signInResult:failed code=${e.statusCode} message=${e.message}\"")
     }
@@ -252,7 +234,6 @@ fun handleSignInResult(completedTask: Task<GoogleSignInAccount>, onLoginButtonCl
 
 private fun sendTokenToServer(idToken: String?, onLoginButtonClicked: () -> Unit) {
     val retrofit = Retrofit.Builder()
-   //     .baseUrl("http://220.65.177.57:9090/")
         .baseUrl("http://35.216.89.227:9090/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
@@ -266,10 +247,7 @@ private fun sendTokenToServer(idToken: String?, onLoginButtonClicked: () -> Unit
                 val tokenResponse = response.body()
                 AuthManager.accessToken = tokenResponse?.accessToken
                 AuthManager.refreshToken = tokenResponse?.refreshToken
-                Log.d("LoginScreen", "Token sent successfully,${tokenResponse?.accessToken},${tokenResponse?.refreshToken}")
                 onLoginButtonClicked()
-            } else {
-                Log.d("LoginScreen", "Token sending failed, ${response.code()}")
             }
         }
 
@@ -280,26 +258,18 @@ private fun sendTokenToServer(idToken: String?, onLoginButtonClicked: () -> Unit
 }
 
 private fun login(loginId: String, password: String) {
-    val request = MemberRequestDto(loginId, password)
+    val request = LoginRequestDto(loginId, password)
     RetrofitClient.instance.login(request).enqueue(object : Callback<TokenDto> {
         override fun onResponse(call: Call<TokenDto>, response: Response<TokenDto>) {
             if (response.isSuccessful) {
                 val tokenResponse = response.body()
                 AuthManager.accessToken = tokenResponse?.accessToken
                 AuthManager.refreshToken = tokenResponse?.refreshToken
-                Log.d("Login", "Login successful: ${tokenResponse?.accessToken}, ${tokenResponse?.refreshToken}")
-                // Proceed with accessing protected resources using accessToken
-            } // else if (AuthManager.isTokenExpired(response)) {
-//                Log.d("Login", "Access token expired. Refreshing token.")
-//                retryLoginWithRefreshToken(loginId, password)
-            else {
-                Log.d("Login", "Login failed: ${response.code()}")
-                // 로그인 실패 시 다이얼로그 띄우자
             }
         }
 
         override fun onFailure(call: Call<TokenDto>, t: Throwable) {
-            Log.e("Login", "Login error", t)
+
         }
     })
 }
@@ -307,21 +277,15 @@ private fun login(loginId: String, password: String) {
 private fun retryLoginWithRefreshToken(loginId: String, password: String) {
     AuthManager.refreshAccessToken { success ->
         if (success) {
-            // Retry accessing the protected resource with the new access token
             loginWithNewAccessToken(loginId, password)
-        } else {
-            Log.e("RetryLogin", "Failed to refresh access token")
         }
     }
 }
 
 private fun loginWithNewAccessToken(loginId: String, password: String) {
-    // Use the new access token to access protected resources
-    val accessToken = AuthManager.accessToken
-    // Add your logic here to use the new access token
-    Log.d("LoginWithNewAccessToken", "New Access Token: $accessToken")
 
-    // Retry login with the new access token
+    val accessToken = AuthManager.accessToken
+
     login(loginId, password)
 }
 

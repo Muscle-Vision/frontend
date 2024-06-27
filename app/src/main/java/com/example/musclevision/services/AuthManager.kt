@@ -26,7 +26,6 @@ object AuthManager {
                     val tokenResponse = response.body()
                     accessToken = tokenResponse?.accessToken
                     refreshToken = tokenResponse?.refreshToken
-                    Log.d("AuthManager", "Token refreshed successfully")
                     onTokenRefreshed(true)
                 } else {
                     Log.e("AuthManager", "Token refresh failed: ${response.errorBody()?.string()}")
@@ -39,10 +38,5 @@ object AuthManager {
                 onTokenRefreshed(false)
             }
         })
-    }
-
-    fun isTokenExpired(response: Response<*>): Boolean {
-        // Assuming your backend returns a 401 status code for expired tokens
-        return false
     }
 }

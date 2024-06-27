@@ -12,4 +12,7 @@
 <!--    <string name="default_web_client_id">401793269061-mut3jla4n5oksf9upm5uibs2kspf51bk.apps.googleusercontent.com</string>-->
     <string name="default_web_client_id">160491226058-ltusqj55fkilgf955e9inieh6v8knene.apps.googleusercontent.com</string>
     <string name="default_web_client_pw">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</string>
+    <string name="guideline">1.카메라로 사진을 찍거나 앨범에서 사진을 고릅니다.
+                    \n2.되도록 정면에서 찍은 전신사진을 사용하세요.
+                    \n3.목, 어깨, 골반의 불균형 및 근육에 대한 점수가 탐지됩니다.</string>
 </resources>

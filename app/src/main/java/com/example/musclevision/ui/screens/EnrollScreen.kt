@@ -31,8 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.musclevision.data.MemberRequestDto
-import com.example.musclevision.data.MemberResponseDto
+import com.example.musclevision.data.LoginRequestDto
+import com.example.musclevision.data.LoginResponseDto
 import com.example.musclevision.services.RetrofitClient
 import com.example.musclevision.ui.theme.md_theme_dark_onPrimaryContainer
 import retrofit2.Call
@@ -113,14 +113,10 @@ fun EnrollScreen(
 }
 
 fun requestEmailVerification(email: String) {
-    Log.d("emailAuth", email)
     RetrofitClient.instance.emailAuth(email).enqueue(object : Callback<String> {
         override fun onResponse(call: Call<String>, response: Response<String>) {
             if (response.isSuccessful) {
-                val authResponse = response.body()
-                Log.d("emailAuth", "emailAuth successful: ${authResponse}")
-            } else {
-                Log.d("emailAuth", "emailAuth failed: ${response.errorBody()?.string()}")
+
             }
         }
 
@@ -131,18 +127,14 @@ fun requestEmailVerification(email: String) {
 }
 
 private fun signup(loginId: String, password: String) {
-    val request = MemberRequestDto(loginId, password)
-    RetrofitClient.instance.signup(request).enqueue(object : Callback<MemberResponseDto> {
-        override fun onResponse(call: Call<MemberResponseDto>, response: Response<MemberResponseDto>) {
+    val request = LoginRequestDto(loginId, password)
+    RetrofitClient.instance.signup(request).enqueue(object : Callback<LoginResponseDto> {
+        override fun onResponse(call: Call<LoginResponseDto>, response: Response<LoginResponseDto>) {
             if (response.isSuccessful) {
-                val memberResponse = response.body()
-                Log.d("Signup", "Signup successful: ${memberResponse?.loginId}")
-            } else {
-                Log.d("Signup", "Signup failed: ${response.errorBody()?.string()}")
+
             }
         }
-
-        override fun onFailure(call: Call<MemberResponseDto>, t: Throwable) {
+        override fun onFailure(call: Call<LoginResponseDto>, t: Throwable) {
             Log.e("Signup", "Signup error", t)
         }
     })

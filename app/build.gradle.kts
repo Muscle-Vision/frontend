@@ -103,5 +103,6 @@ dependencies {
     implementation("com.google.mlkit:pose-detection-accurate:18.0.0-beta4")
 
     implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("androidx.compose.material:material:1.3.1")
 }
 

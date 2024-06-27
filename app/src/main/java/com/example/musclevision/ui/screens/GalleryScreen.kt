@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -38,12 +36,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import coil.compose.rememberImagePainter
-import com.example.musclevision.services.AuthManager
 import com.example.musclevision.services.uploadImage
 import com.example.musclevision.services.uriToFile
 import com.example.musclevision.ui.theme.md_theme_dark_onPrimaryContainer
@@ -52,9 +48,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun GalleryScreen(onSelectButtonClicked: (Uri, String) -> Unit, modifier: Modifier = Modifier) {
-    Log.d("GalleryScreen","${AuthManager.accessToken}")
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var analysedImageUri by remember { mutableStateOf<Uri?>(null) }
     var permissionGranted by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -105,7 +99,10 @@ fun GalleryScreen(onSelectButtonClicked: (Uri, String) -> Unit, modifier: Modifi
                     crossfade(true)
                 }
             )
-            Text(text = "이 사진으로 하시겠습니까?", style = MaterialTheme.typography.headlineMedium)
+            Text(text = "분석할 사진을 고르세요.", style = MaterialTheme.typography.headlineMedium)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Box(
                 modifier = Modifier
                     .padding(vertical = 8.dp)
@@ -119,7 +116,7 @@ fun GalleryScreen(onSelectButtonClicked: (Uri, String) -> Unit, modifier: Modifi
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Row(modifier = Modifier
                 .fillMaxWidth()
@@ -141,25 +138,14 @@ fun GalleryScreen(onSelectButtonClicked: (Uri, String) -> Unit, modifier: Modifi
                             lifecycleOwner.lifecycleScope.launch {
                                 try {
                                     val response = uploadImage(file)
-                                    Log.d("GalleryScreen", "응답으로 받은것 + 내가준 파일: ${response.body()} , $file")
                                     if (response.isSuccessful) {
-                                        // 업로드 성공
                                         receivedUri = response.body()?.photoRoute
-                                        // 서버 응답에 따라 적절한 처리를 수행합니다.
-                                        Log.d("GalleryScreen", "성공 : ${response.body()?.photoRoute}, $receivedUri")
                                         onSelectButtonClicked(uri, receivedUri!!)
-                                    } else {
-                                        // 업로드 실패
-                                        val errorMessage = response.message()
-                                        // 오류 처리
-                                        Log.d("GalleryScreen", "에러로 받은것: $errorMessage")
                                     }
                                 } catch (e: Exception) {
-                                    // 예외 처리
                                     Log.e(" GalleryScreen", "Error sending image: ${e.message}")
                                 }
                             }
-                            Log.d("GalleryScreen", "Image captured and saved: ${file.absolutePath}")
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = md_theme_dark_onPrimaryContainer)
@@ -168,7 +154,6 @@ fun GalleryScreen(onSelectButtonClicked: (Uri, String) -> Unit, modifier: Modifi
                     Spacer(modifier = Modifier.width(6.dp))
                     Icon(imageVector = Icons.Default.ReceiptLong, contentDescription = "카메라")
                 }
-                Log.d("selected",uri.toString())
             }
         }
     }

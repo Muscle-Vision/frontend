@@ -7,5 +7,5 @@ import kotlinx.parcelize.Parcelize
 data class UnbalanceFigureDto(
     val neckFigure : Pair<Float, String>,
     val shoulderFigure : Pair<Float, String>,
-    val pelvis : Pair<Float, String>
+    val pelvisFigure : Pair<Float, String>
 ) : Parcelable

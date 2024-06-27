@@ -1,11 +1,8 @@
 package com.example.musclevision
 
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -32,17 +28,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.musclevision.data.UnbalanceFigureDto
 import com.example.musclevision.ui.screens.CameraScreen
 import com.example.musclevision.ui.screens.CapturedImageScreen
 import com.example.musclevision.ui.screens.EnrollScreen
 import com.example.musclevision.ui.screens.GalleryScreen
-import com.example.musclevision.ui.screens.GreetingScreen
 import com.example.musclevision.ui.screens.LoginScreen
 import com.example.musclevision.ui.screens.MainScreen
 import com.example.musclevision.ui.screens.ReportScreen
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.gson.Gson
 
 enum class MuscleVisionScreen(@StringRes val title: Int) {
     Greeting(title = R.string.app_name),
@@ -92,7 +84,6 @@ fun MuscleVisionApp(
     navController: NavHostController = rememberNavController()
 ){
     val backStackEntry by navController.currentBackStackEntryAsState()
-    // Get the name of the current screen
     val currentScreen = MuscleVisionScreen.valueOf(
         backStackEntry?.destination?.route?.substringBefore("?") ?: MuscleVisionScreen.Login.name
     )
@@ -117,7 +108,6 @@ fun MuscleVisionApp(
                 LoginScreen(
                     onEnrollButtonClicked = {
                         navController.navigate(MuscleVisionScreen.Enroll.name)
-                        Log.d("ClickButton","success")
                     },
                     onLoginButtonClicked = {
                         navController.navigate(MuscleVisionScreen.Main.name)
@@ -131,7 +121,6 @@ fun MuscleVisionApp(
                 EnrollScreen(
                     onFinishEnrollButtonClicked = {
                         navController.navigate(MuscleVisionScreen.Login.name)
-                        Log.d("ClickButton","success")
                     },
                     modifier = Modifier
                         .fillMaxSize()
@@ -142,11 +131,9 @@ fun MuscleVisionApp(
                 MainScreen(
                     onToGalleryButtonClicked = {
                         navController.navigate(MuscleVisionScreen.Gallery.name)
-                        Log.d("ClickButton","success")
                     },
                     onToCameraButtonClicked = {
                         navController.navigate(MuscleVisionScreen.Camera.name)
-                        Log.d("ClickButton","success")
                     },
                     modifier = Modifier
                         .fillMaxSize()
@@ -157,9 +144,7 @@ fun MuscleVisionApp(
                 GalleryScreen(
                     onSelectButtonClicked = { uri, receivedUri ->
                         navController.navigate("${MuscleVisionScreen.Report.name}?uri=${Uri.encode(uri.toString())}&receivedUri=${Uri.encode(receivedUri)}")
-                        Log.d("ClickButton","success")
                     },
-//                    "${MuscleVisionScreen.CapturedImage.name}?uri=${Uri.encode(uri.toString())}&description=${Uri.encode(descriptionJson)}
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp)
@@ -194,32 +179,6 @@ fun MuscleVisionApp(
                     )
                 }
             }
-//            composable(
-//                route = "${MuscleVisionScreen.CapturedImage.name}?uri={uri}&description={description}",
-//                arguments = listOf(
-//                    navArgument("uri") { type = NavType.StringType },
-//                    navArgument("description"){ type = NavType.StringType },
-//                )
-//            ) { backStackEntry ->
-//                val uriString = backStackEntry.arguments?.getString("uri")
-//                val descriptionJson = backStackEntry.arguments?.getString("description")
-//                val gson = Gson()
-//                val description = gson.fromJson(descriptionJson, UnbalanceFigureDto::class.java)
-//                uriString?.let { uri ->
-//                    description?.let{ description ->
-//                        CapturedImageScreen(
-//                            onAnalyzeButtonClicked = {
-//                                navController.navigate(MuscleVisionScreen.Report.name)
-//                            },
-//                            onRetakeButtonClicked = {
-//                                navController.navigate(MuscleVisionScreen.Camera.name)
-//                            },
-//                            imageUri = Uri.parse(uri),
-//                            description = description
-//                        )
-//                    }
-//                }
-//            }
             composable(
                 route = "${MuscleVisionScreen.Report.name}?uri={uri}&receivedUri={receivedUri}",
                 arguments = listOf(
@@ -235,7 +194,6 @@ fun MuscleVisionApp(
                             ReportScreen(
                                 onNextButtonClicked = {
                                     navController.navigate(MuscleVisionScreen.Greeting.name)
-                                    Log.d("ClickButton","success")
                                 },
                                 imageUri = Uri.parse(uri),
                                 receivedUri = receivedUri,

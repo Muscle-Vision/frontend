@@ -1,5 +1,5 @@
 package com.example.musclevision.data
 
-data class MemberResponseDto(
+data class LoginResponseDto(
     val loginId: String
 )
